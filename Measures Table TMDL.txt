@@ -1,0 +1,197 @@
+createOrReplace
+
+	table 'Measures Table'
+		lineageTag: 6a6cbdeb-d0fc-40fc-9b3c-46dc124e2186
+
+		measure 'CO2 Emission %' =
+				
+				var overall = CALCULATE(SUM('Emissions'[Emission Value (billion tons)]), all('Emissions'))
+				var total = SUM('Emissions'[Emission Value (billion tons)])
+				RETURN
+				DIVIDE(total, overall, 0)
+			formatString: 0.00%;-0.00%;0.00%
+			displayFolder: #Measures
+			lineageTag: 173865a3-f20a-4f51-920c-102d81591d00
+
+		measure 'CO2 Emission 2019' =
+				
+				CALCULATE(
+				    SUM('Emissions'[Emission Value (billion tons)]),
+				    'Year'[year] = 2019
+				    )
+			formatString: #,0
+			displayFolder: #Measures
+			lineageTag: fba1b323-8a16-43e8-9705-afb05e47a3aa
+
+		measure 'CO2 emission 2019 club text' =
+				
+				CONCATENATE(
+				    "2019: ",
+				    CONCATENATE(
+				        FORMAT(
+				            [CO2 Emission 2019]/1000, "#,0.##"
+				        ), "K"
+				    )
+				)
+			displayFolder: #Measures
+			lineageTag: 9dfec316-8910-41a9-9231-00ed73355bcf
+
+		measure 'CO2 Emission 2020' =
+				
+				CALCULATE(
+				    SUM('Emissions'[Emission Value (billion tons)]),
+				    'Year'[year] = 2020
+				    )
+			formatString: #,0.0
+			displayFolder: #Measures
+			lineageTag: 62c3b630-b7a8-43e4-8c3b-47de833be341
+
+		measure 'CO2 emission indicator' = ```
+				
+				IF(
+				    [CO2 Emission 2020] > [CO2 Emission 2019], 
+				    UNICHAR ( 9650),
+				    UNICHAR ( 9660 )
+				)
+				```
+			displayFolder: #Measures
+			lineageTag: 71ea7ec3-4305-40fb-8ba7-d4ae13b9241b
+
+		measure 'CO2 emission indicator color' =
+				
+				IF(
+				    [CO2 emission indicator] = UNICHAR ( 9650),
+				    "#FF0000",
+				    "#00A300"
+				)
+			displayFolder: #Measures
+			lineageTag: 018232d4-d675-459b-9678-7cce3aff423d
+
+		measure 'Difference This vs Last' = [This Year] - [Last Year]
+			formatString: #,0
+			displayFolder: #Measures
+			lineageTag: a9a6ddf0-00d0-4223-8951-df92ce222950
+
+		measure 'Emmision Type Color Code' =
+				
+				VAR eType = SELECTEDVALUE('Emission Type'[Emission Type])
+				RETURN
+				SWITCH(
+				    TRUE(),
+				    eType = "Coal", "#669267",
+				    eType = "Oil", "#818331",
+				    eType = "Cement", "#7849cf",
+				    eType = "Gas", "#d449bc",
+				    eType = "Flaring", "#617ac3",
+				    eType = "Consumption", "#ad6d32",
+				    eType = "Trade", "#d44c33",
+				    eType = "Unknown", "#984e90",
+				    "#bb4b61"
+				)
+			displayFolder: #Measures
+			lineageTag: 3fac3c38-a32d-4066-85d4-40e9a7569260
+
+		measure 'Last 5 year average' =
+				// custom formula to get average emissions for last 10 years
+				CALCULATE(
+				    AVERAGE('Emissions'[Emission Value (billion tons)]), // average of emissions
+				    FILTER(
+				        ALLSELECTED('Emissions'),
+				        'Emissions'[year] >= 2015
+				    )
+				)
+			displayFolder: #Measures
+			lineageTag: cdc7a8e8-24e3-46da-8c56-514b2927a190
+
+			annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+		measure 'Last Year' =
+				
+				var currentYear = MAX('Year'[year])
+				RETURN
+				CALCULATE(
+				    SUM('Emissions'[Emission Value (billion tons)]),
+				    'Year'[year] = currentYear - 1
+				)
+			formatString: #,0
+			displayFolder: #Measures
+			lineageTag: 859dab83-7bc2-46bc-90c8-54e51a4aca0c
+
+		measure 'Percentage Change' =
+				
+				DIVIDE(
+				    ([This Year] - [Last Year]), [Last Year], 0
+				)
+			formatString: 0.00%;-0.00%;0.00%
+			displayFolder: #Measures
+			lineageTag: baed7e70-33ef-401c-a96d-1fa795ce43c5
+
+		measure Population = ```
+				
+				CALCULATE(
+				    SUM('Emissions'[Emission Value (billion tons)]),
+				    FILTER(
+				        'Emissions', 
+				        RELATED('Emission Sub-Type'[Emission Sub-Type]) = "population"
+				    )
+				)
+				```
+			formatString: #,0
+			displayFolder: #Measures
+			lineageTag: 157f7e95-218d-445a-9e48-bc4df0a1ee41
+
+		measure 'This Year' =
+				
+				var currentYear = MAX('Year'[year])
+				RETURN
+				CALCULATE(
+				    SUM('Emissions'[Emission Value (billion tons)]),
+				    'Year'[year] = currentYear
+				)
+			formatString: #,0
+			displayFolder: #Measures
+			lineageTag: 922c999e-e78d-4519-a726-16e036ed910c
+
+		measure 'Total CO2 Emission' =
+				
+				SUM(
+				    'Emissions'[Emission Value (billion tons)]
+				    )
+			formatString: #,0
+			displayFolder: #Measures
+			lineageTag: c7ebea7b-2545-4fc9-bd98-e4f84283be73
+
+		measure 'Year with max emission' = ```
+				
+				var maxValue = 
+				CALCULATE(
+				    MAX('Emissions'[Emission Value (billion tons)]),
+				    ALLEXCEPT('Emissions', 'Emissions'[Country Key])
+				)
+				var maxYear = CALCULATE(
+				    MAX('Emissions'[year]),
+				    'Emissions'[Emission Value (billion tons)] = maxValue
+				    )
+				RETURN
+				maxYear
+				```
+			formatString: 0
+			displayFolder: #Measures
+			lineageTag: c4270bd8-6603-491b-a3d1-9ea2c25a5c33
+
+		column Measures
+			isHidden
+			formatString: 0
+			lineageTag: 7eda53fa-b9e7-4e89-8b39-52406eae662a
+			summarizeBy: sum
+			isNameInferred
+			sourceColumn: [Measures]
+
+			annotation SummarizationSetBy = Automatic
+
+		partition 'Measures Table' = calculated
+			mode: import
+			source = ROW("Measures", BLANK())
+
+		annotation PBI_Id = 1e987a056f10465692bf386a0d75fae6
+
